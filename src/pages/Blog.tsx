@@ -9,103 +9,31 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Search } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-
-interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  date: Date;
-  image: string;
-  category: string;
-  tags: string[];
-  slug: string;
-  readTime: string;
-}
+import { getAllPosts, BlogPost } from "@/utils/blogUtils";
 
 const Blog = () => {
-  const allPosts: BlogPost[] = [
-    {
-      id: "1",
-      title: "Beyond Basic EDA: Advanced Techniques for Data Understanding",
-      excerpt: "Discover powerful techniques that go beyond the basic data exploration methods to uncover hidden patterns in complex datasets.",
-      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: new Date(2023, 9, 12),
-      image: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      category: "Data Science",
-      tags: ["Data Analysis", "Visualization", "Statistical Methods"],
-      slug: "beyond-basic-eda",
-      readTime: "8 min read"
-    },
-    {
-      id: "2",
-      title: "When Machine Learning Models Fail: Lessons from the Field",
-      excerpt: "Learn from real-world examples of ML deployment challenges and how to overcome them.",
-      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: new Date(2023, 8, 5),
-      image: "https://images.unsplash.com/photo-1607799279861-4dd421887fb3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      category: "Machine Learning",
-      tags: ["Model Deployment", "ML Ops", "Troubleshooting"],
-      slug: "ml-models-fail-lessons",
-      readTime: "10 min read"
-    },
-    {
-      id: "3",
-      title: "Optimizing Python for Data-Intensive Applications",
-      excerpt: "Practical tips to make your Python data processing pipelines more efficient and scalable.",
-      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: new Date(2023, 7, 18),
-      image: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      category: "Programming",
-      tags: ["Python", "Optimization", "Performance"],
-      slug: "optimizing-python-data",
-      readTime: "6 min read"
-    },
-    {
-      id: "4",
-      title: "Demystifying Neural Network Architectures",
-      excerpt: "A comprehensive guide to understanding different types of neural networks and when to use them.",
-      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: new Date(2023, 6, 25),
-      image: "https://images.unsplash.com/photo-1507146153580-69a1fe6d8aa1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      category: "Deep Learning",
-      tags: ["Neural Networks", "Deep Learning", "AI"],
-      slug: "neural-network-architectures",
-      readTime: "12 min read"
-    },
-    {
-      id: "5",
-      title: "The Ethics of AI: Navigating Bias in Machine Learning",
-      excerpt: "Exploring the ethical considerations and practical approaches to addressing bias in AI systems.",
-      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: new Date(2023, 5, 14),
-      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      category: "AI Ethics",
-      tags: ["Ethics", "Bias", "Responsible AI"],
-      slug: "ethics-ai-bias",
-      readTime: "9 min read"
-    },
-    {
-      id: "6",
-      title: "From SQL to NoSQL: Choosing the Right Database for Your Data",
-      excerpt: "A comparison of database technologies to help you select the optimal solution for your specific use case.",
-      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      date: new Date(2023, 4, 8),
-      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-      category: "Databases",
-      tags: ["SQL", "NoSQL", "Database Design"],
-      slug: "sql-nosql-comparison",
-      readTime: "7 min read"
-    }
-  ];
-  
-  const categories = Array.from(new Set(allPosts.map(post => post.category))).sort();
-  const allTags = Array.from(new Set(allPosts.flatMap(post => post.tags))).sort();
-  
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>(allPosts);
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
+  
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const posts = await getAllPosts();
+        setAllPosts(posts);
+        setFilteredPosts(posts);
+      } catch (error) {
+        console.error("Failed to fetch blog posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPosts();
+  }, []);
   
   useEffect(() => {
     let results = allPosts;
@@ -130,6 +58,10 @@ const Blog = () => {
     
     setFilteredPosts(results);
   }, [searchTerm, activeCategory, activeTag, allPosts]);
+  
+  // Extract categories and tags from posts
+  const categories = Array.from(new Set(allPosts.map(post => post.category))).sort();
+  const allTags = Array.from(new Set(allPosts.flatMap(post => post.tags))).sort();
   
   return (
     <>
@@ -164,40 +96,44 @@ const Blog = () => {
                   />
                 </div>
                 
-                <div>
-                  <h3 className="font-semibold text-lg mb-3">Categories</h3>
-                  <div className="space-y-2">
-                    {categories.map(category => (
-                      <div key={category} className="flex items-center">
-                        <Button
-                          variant="ghost"
-                          className={`justify-start px-2 py-1 h-auto text-left w-full ${
-                            activeCategory === category ? "bg-primary/10 text-primary" : ""
-                          }`}
-                          onClick={() => setActiveCategory(activeCategory === category ? null : category)}
-                        >
-                          {category}
-                        </Button>
-                      </div>
-                    ))}
+                {categories.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">Categories</h3>
+                    <div className="space-y-2">
+                      {categories.map(category => (
+                        <div key={category} className="flex items-center">
+                          <Button
+                            variant="ghost"
+                            className={`justify-start px-2 py-1 h-auto text-left w-full ${
+                              activeCategory === category ? "bg-primary/10 text-primary" : ""
+                            }`}
+                            onClick={() => setActiveCategory(activeCategory === category ? null : category)}
+                          >
+                            {category}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 
-                <div>
-                  <h3 className="font-semibold text-lg mb-3">Popular Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {allTags.map(tag => (
-                      <Badge
-                        key={tag}
-                        variant={activeTag === tag ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
+                {allTags.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">Popular Tags</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {allTags.map(tag => (
+                        <Badge
+                          key={tag}
+                          variant={activeTag === tag ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {(activeCategory || activeTag || searchTerm) && (
                   <Button
@@ -215,7 +151,11 @@ const Blog = () => {
               
               {/* Blog posts grid */}
               <div className="lg:col-span-3">
-                {filteredPosts.length > 0 ? (
+                {loading ? (
+                  <div className="text-center py-16">
+                    <p className="text-xl text-muted-foreground mb-4">Loading blog posts...</p>
+                  </div>
+                ) : filteredPosts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {filteredPosts.map((post) => (
                       <Card key={post.id} className="overflow-hidden border border-border h-full flex flex-col">
@@ -233,7 +173,7 @@ const Blog = () => {
                               {post.category}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(post.date, { addSuffix: true })}
+                              {formatDistanceToNow(new Date(post.date), { addSuffix: true })}
                             </span>
                           </div>
                           <CardTitle className="line-clamp-2">
