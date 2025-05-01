@@ -24,6 +24,9 @@ interface ProjectCardProps {
 const ProjectCard = ({ project, className }: ProjectCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   
+  // Extract the project ID from the link
+  const projectId = project.link.split('/').pop() || '';
+  
   return (
     <Card 
       className={cn(
@@ -64,7 +67,7 @@ const ProjectCard = ({ project, className }: ProjectCardProps) => {
       
       <CardFooter>
         <Button asChild variant="outline" size="sm" className="w-full group">
-          <Link to={project.link}>
+          <Link to={`/projects/${projectId}`}>
             View Project
             <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
