@@ -1,12 +1,15 @@
+
 import { useRef, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ProjectCard, { Project } from "./ProjectCard";
 import { Link } from "react-router-dom";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 const ProjectsSection = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const projectsPerPage = 3;
   
   const projects: Project[] = [
     {
@@ -43,30 +46,16 @@ const ProjectsSection = () => {
     }
   ];
   
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const scrollAmount = container.clientWidth * 0.8;
-      
-      if (direction === 'left') {
-        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-      } else {
-        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-      }
-      
-      // Update scroll position
-      setTimeout(() => {
-        if (container) {
-          setScrollPosition(container.scrollLeft);
-        }
-      }, 300);
-    }
-  };
+  // Calculate total pages
+  const totalPages = Math.ceil(projects.length / projectsPerPage);
   
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      setScrollPosition(scrollContainerRef.current.scrollLeft);
-    }
+  // Get current projects
+  const indexOfLastProject = currentPage * projectsPerPage;
+  const indexOfFirstProject = indexOfLastProject - projectsPerPage;
+  const currentProjects = projects.slice(indexOfFirstProject, indexOfLastProject);
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
   
   return (
@@ -80,45 +69,52 @@ const ProjectsSection = () => {
               A selection of my recent data science and machine learning projects.
             </p>
           </div>
-          
-          <div className="flex items-center mt-4 md:mt-0">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => scroll('left')}
-              disabled={scrollPosition === 0}
-              className="mr-2"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => scroll('right')}
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
         
-        <div 
-          ref={scrollContainerRef}
-          className="flex space-x-6 overflow-x-auto pb-8 scroll-smooth hide-scrollbar"
-          onScroll={handleScroll}
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {projects.map((project) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {currentProjects.map((project) => (
             <div 
               key={project.id}
-              className="min-w-[300px] sm:min-w-[320px] md:min-w-[350px] flex-shrink-0 animate-fade-in"
+              className="animate-fade-in"
               style={{ animationDelay: `${parseInt(project.id) * 150}ms` }}
             >
               <ProjectCard project={project} className="h-full" />
             </div>
           ))}
         </div>
+        
+        {totalPages > 1 && (
+          <div className="mt-8">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }).map((_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(index + 1)}
+                      isActive={currentPage === index + 1}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
         
         <div className="text-center mt-8">
           <Button asChild variant="default" className="font-medium">
