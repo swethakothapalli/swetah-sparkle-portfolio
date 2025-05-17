@@ -16,7 +16,7 @@ const BlogSection = () => {
     const fetchPosts = async () => {
       try {
         const allPosts = await getAllPosts();
-        // Get only the latest 3 posts for the homepage section
+        // Get exactly 3 posts for the homepage section
         setPosts(allPosts.slice(0, 3));
       } catch (error) {
         console.error("Failed to fetch blog posts:", error);
@@ -47,7 +47,7 @@ const BlogSection = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {posts.map((post) => (
                 <Card key={post.id} className="overflow-hidden border border-border h-full flex flex-col animate-fade-in">
                   <div className="h-48 overflow-hidden">

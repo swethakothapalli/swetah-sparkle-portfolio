@@ -112,7 +112,7 @@ const ProjectsSection = () => {
           {projects.map((project) => (
             <div 
               key={project.id}
-              className="min-w-[300px] sm:min-w-[350px] md:min-w-[400px] flex-shrink-0 animate-fade-in"
+              className="min-w-[300px] sm:min-w-[320px] md:min-w-[350px] flex-shrink-0 animate-fade-in"
               style={{ animationDelay: `${parseInt(project.id) * 150}ms` }}
             >
               <ProjectCard project={project} className="h-full" />
