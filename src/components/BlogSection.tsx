@@ -12,16 +12,21 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 const BlogSection = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 3;
   
   useEffect(() => {
     const fetchPosts = async () => {
       try {
+        console.log("Fetching blog posts...");
         const allPosts = await getAllPosts();
+        console.log("Fetched blog posts:", allPosts);
         setPosts(allPosts);
-      } catch (error) {
-        console.error("Failed to fetch blog posts:", error);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch blog posts:", err);
+        setError("Failed to load blog posts. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -57,6 +62,24 @@ const BlogSection = () => {
           <div className="flex justify-center items-center py-20">
             <div className="text-center">
               <p>Loading blog posts...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-center">
+              <p className="text-red-500">{error}</p>
+              <Button 
+                onClick={() => {setLoading(true); setError(null); getAllPosts().then(setPosts).finally(() => setLoading(false)).catch(e => setError(e.message))}} 
+                className="mt-4"
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-center">
+              <p>No blog posts found.</p>
             </div>
           </div>
         ) : (
