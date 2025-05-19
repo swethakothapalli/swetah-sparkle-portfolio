@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { Project } from "@/components/ProjectCard";
+import { Project } from "@/utils/projectUtils";
 
 const projects: Project[] = [
   {

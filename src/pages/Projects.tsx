@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ProjectCard, { Project } from "@/components/ProjectCard";
+import ProjectCard from "@/components/ProjectCard";
+import { Project } from "@/utils/projectUtils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
