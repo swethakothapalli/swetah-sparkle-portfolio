@@ -6,15 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  tags: string[];
-  image: string;
-  link: string;
-}
+import { Project } from "@/utils/projectUtils";
 
 interface ProjectCardProps {
   project: Project;

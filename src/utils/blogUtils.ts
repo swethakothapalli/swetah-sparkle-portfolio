@@ -15,16 +15,13 @@ export interface BlogPost {
 }
 
 export async function getAllPosts(): Promise<BlogPost[]> {
-  // This function will be called to get all blog posts
   try {
-    // Fetch the list of all markdown files in the BlogArticles directory
-    const response = await fetch('/api/blog-files');
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch blog files');
-    }
-    
-    const fileNames: string[] = await response.json();
+    // Use a static array of blog files instead of fetching from API
+    const fileNames = [
+      "beyond-basic-eda.md",
+      "ml-models-fail-lessons.md",
+      "optimizing-python-data.md"
+    ];
     
     // Process each file to extract metadata and content
     const postsPromises = fileNames.map(async (fileName) => {
