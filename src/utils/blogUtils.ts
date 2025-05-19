@@ -150,7 +150,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
     console.log(`Successfully fetched markdown for ${slug}, length: ${markdown.length} characters`);
     
     try {
-      // Parse the markdown file with gray-matter to separate frontmatter from content
+      // Parse the markdown file with our enhanced frontmatter parser
       const { data, content } = parseFrontMatter(markdown);
       
       // Parse the date string into a Date object with validation
@@ -160,19 +160,31 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
       // Return the post with all needed properties
       return {
         id: slug,
-        title: data.title || '',
+        title: data.title || slug,
         excerpt: data.excerpt || '',
-        content: content || '',
+        content: content || markdown, // Fallback to entire markdown if no frontmatter
         date: date,
-        image: data.image || '',
-        category: data.category || '',
+        image: data.image || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
+        category: data.category || 'Uncategorized',
         tags: data.tags || [],
         slug: slug,
-        readTime: data.readTime || ''
+        readTime: data.readTime || '5 min read'
       };
     } catch (parseError) {
       console.error(`Error parsing frontmatter for ${slug}:`, parseError);
-      throw parseError;
+      // Return a basic post object even if parsing fails
+      return {
+        id: slug,
+        title: slug,
+        excerpt: 'Content preview unavailable',
+        content: markdown, // Use the raw markdown content
+        date: new Date(),
+        image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
+        category: 'Uncategorized',
+        tags: [],
+        slug: slug,
+        readTime: '5 min read'
+      };
     }
   } catch (error) {
     console.error(`Error fetching blog post ${slug}:`, error);
@@ -180,26 +192,41 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
   }
 }
 
-// Custom function to parse frontmatter without relying on Buffer
+// Enhanced frontmatter parser for browser environment
 function parseFrontMatter(markdown: string) {
-  // Simple regex-based frontmatter parser for browser environment
-  const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
-  const match = frontmatterRegex.exec(markdown);
+  // Multiple regex patterns to handle different frontmatter formats
+  const patterns = [
+    /^---\r?\n([\s\S]*?)\r?\n---\r?\n/,     // Standard YAML format
+    /^---\r?\n([\s\S]*?)\r?\n---/,          // Alternative YAML format
+    /^\+\+\+\r?\n([\s\S]*?)\r?\n\+\+\+\r?\n/, // TOML format
+    /^\{\{[\s\S]*?\}\}\r?\n/                // JSON format
+  ];
+  
+  let match = null;
+  
+  // Try each pattern until we find a match
+  for (const pattern of patterns) {
+    match = pattern.exec(markdown);
+    if (match) break;
+  }
   
   if (!match) {
-    console.error("No frontmatter found in markdown");
-    return { data: {}, content: markdown };
+    console.warn("No frontmatter found in markdown, creating default metadata");
+    return { 
+      data: {}, 
+      content: markdown 
+    };
   }
   
   const frontMatter = match[1];
-  const content = markdown.replace(frontmatterRegex, '');
+  const content = markdown.replace(match[0], '');
   
   // Parse the YAML-like frontmatter
   const data: Record<string, any> = {};
   const lines = frontMatter.split('\n');
   
   for (const line of lines) {
-    if (line.trim() === '') continue;
+    if (line.trim() === '' || line.trim().startsWith('#')) continue;
     
     const colonIndex = line.indexOf(':');
     if (colonIndex !== -1) {
@@ -208,6 +235,8 @@ function parseFrontMatter(markdown: string) {
       
       // Handle quoted strings
       if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1);
+      } else if (value.startsWith("'") && value.endsWith("'")) {
         value = value.slice(1, -1);
       }
       
