@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, isValid } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,20 @@ interface BlogCardProps {
 }
 
 const BlogCard = ({ post }: BlogCardProps) => {
+  // Format date with validation to avoid "Invalid time value" error
+  const getFormattedDate = () => {
+    try {
+      const dateObj = new Date(post.date);
+      if (isValid(dateObj)) {
+        return formatDistanceToNow(dateObj, { addSuffix: true });
+      }
+      return "Date unavailable";
+    } catch (err) {
+      console.error("Error formatting date:", err, post.date);
+      return "Date unavailable";
+    }
+  };
+
   return (
     <Card key={post.id} className="overflow-hidden border border-border h-full flex flex-col">
       <div className="h-48 overflow-hidden">
@@ -29,7 +43,7 @@ const BlogCard = ({ post }: BlogCardProps) => {
             {post.category}
           </Badge>
           <span className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(post.date), { addSuffix: true })}
+            {getFormattedDate()}
           </span>
         </div>
         <CardTitle className="line-clamp-2">

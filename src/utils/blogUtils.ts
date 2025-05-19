@@ -1,4 +1,3 @@
-
 import matter from 'gray-matter';
 
 export interface BlogPost {
@@ -52,8 +51,9 @@ export async function getAllPosts(): Promise<BlogPost[]> {
       
       // Sort posts by date (newest first)
       return posts.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
+        // Ensure we have valid date objects
+        const dateA = ensureValidDate(a.date);
+        const dateB = ensureValidDate(b.date);
         return dateB.getTime() - dateA.getTime();
       });
     } catch (innerError) {
@@ -66,9 +66,31 @@ export async function getAllPosts(): Promise<BlogPost[]> {
   }
 }
 
+// Helper function to ensure we have a valid date object
+function ensureValidDate(date: any): Date {
+  try {
+    const dateObj = new Date(date);
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn("Invalid date encountered, using current date instead:", date);
+      return new Date(); // Return current date as fallback
+    }
+    return dateObj;
+  } catch (e) {
+    console.error("Error parsing date:", e);
+    return new Date(); // Return current date as fallback
+  }
+}
+
 // Function to create static blog posts when markdown processing fails
 function getStaticBlogPosts(): BlogPost[] {
   console.log("Using static blog posts as fallback");
+  
+  const currentDate = new Date();
+  const yesterday = new Date(currentDate);
+  yesterday.setDate(currentDate.getDate() - 1);
+  const lastWeek = new Date(currentDate);
+  lastWeek.setDate(currentDate.getDate() - 7);
   
   // Create hardcoded blog posts to ensure content is displayed
   const staticPosts: BlogPost[] = [
@@ -77,7 +99,7 @@ function getStaticBlogPosts(): BlogPost[] {
       slug: 'beyond-basic-eda',
       title: 'Beyond Basic EDA: Advanced Techniques for Data Scientists',
       excerpt: 'Move past simple exploratory data analysis with these advanced techniques that can uncover hidden patterns in your data.',
-      date: new Date('2023-11-15'),
+      date: currentDate,
       image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
       category: 'Data Science',
       tags: ['Data Analysis', 'Statistics', 'Visualization'],
@@ -89,7 +111,7 @@ function getStaticBlogPosts(): BlogPost[] {
       slug: 'ml-models-fail-lessons',
       title: 'Why ML Models Fail in Production: Lessons from the Field',
       excerpt: 'Discover the common pitfalls that cause machine learning models to fail when deployed to production environments and how to avoid them.',
-      date: new Date('2024-02-20'),
+      date: yesterday,
       image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b',
       category: 'Machine Learning',
       tags: ['MLOps', 'Production', 'Deployment'],
@@ -101,7 +123,7 @@ function getStaticBlogPosts(): BlogPost[] {
       slug: 'optimizing-python-data',
       title: 'Optimizing Python Data Pipelines for Better Performance',
       excerpt: 'Learn practical techniques to speed up your Python data processing pipelines and handle larger datasets more efficiently.',
-      date: new Date('2024-04-05'),
+      date: lastWeek,
       image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6',
       category: 'Data Engineering',
       tags: ['Python', 'Performance', 'Big Data'],
@@ -131,8 +153,9 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
       // Parse the markdown file with gray-matter to separate frontmatter from content
       const { data, content } = parseFrontMatter(markdown);
       
-      // Parse the date string into a Date object
-      const date = new Date(data.date);
+      // Parse the date string into a Date object with validation
+      const parsedDate = data.date ? new Date(data.date) : new Date();
+      const date = ensureValidDate(parsedDate);
       
       // Return the post with all needed properties
       return {

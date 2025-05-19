@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getAllPosts, BlogPost } from "@/utils/blogUtils";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, isValid } from "date-fns";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 
@@ -84,6 +83,20 @@ const BlogSection = () => {
       .finally(() => setLoading(false));
   };
   
+  // Function to safely format dates
+  const getFormattedDate = (dateValue: Date) => {
+    try {
+      const dateObj = new Date(dateValue);
+      if (isValid(dateObj)) {
+        return formatDistanceToNow(dateObj, { addSuffix: true });
+      }
+      return "Date unavailable";
+    } catch (err) {
+      console.error("Error formatting date:", err, dateValue);
+      return "Date unavailable";
+    }
+  };
+  
   return (
     <section className="section bg-secondary/20 dark:bg-secondary/10">
       <div className="container-content">
@@ -138,7 +151,7 @@ const BlogSection = () => {
                         {post.category}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(post.date), { addSuffix: true })}
+                        {getFormattedDate(post.date)}
                       </span>
                     </div>
                     <CardTitle className="line-clamp-2 hover:text-primary transition-colors">

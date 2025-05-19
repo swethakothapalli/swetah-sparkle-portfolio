@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar } from "lucide-react";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
 import { getPostBySlug, BlogPost } from "@/utils/blogUtils";
 import { useToast } from "@/hooks/use-toast";
+import { isValid } from "date-fns";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -42,6 +44,23 @@ const BlogPostPage = () => {
     
     fetchPost();
   }, [slug, toast]);
+  
+  // Format date safely
+  const formatPostDate = (date: Date | undefined | null) => {
+    if (!date || !isValid(new Date(date))) {
+      return "Date unavailable";
+    }
+    try {
+      return new Date(date).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch (e) {
+      console.error("Error formatting post date:", e);
+      return "Date unavailable";
+    }
+  };
   
   if (loading) {
     return (
@@ -103,11 +122,7 @@ const BlogPostPage = () => {
               <div className="flex items-center justify-center space-x-4 text-white/90 text-sm">
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
-                  {new Date(post.date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  {formatPostDate(post.date)}
                 </div>
                 <span>•</span>
                 <div>{post.readTime}</div>
