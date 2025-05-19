@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar } from "lucide-react";
@@ -8,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
 import { getPostBySlug, BlogPost } from "@/utils/blogUtils";
+import { useToast } from "@/hooks/use-toast";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     const fetchPost = async () => {
@@ -22,18 +23,25 @@ const BlogPostPage = () => {
           throw new Error("No slug provided");
         }
         
+        setLoading(true);
         const postData = await getPostBySlug(slug);
         setPost(postData);
+        setError(null);
       } catch (err) {
         console.error("Failed to fetch blog post:", err);
         setError("Failed to load blog post. It might have been moved or deleted.");
+        toast({
+          title: "Error loading blog post",
+          description: "The requested blog post could not be loaded.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
     
     fetchPost();
-  }, [slug]);
+  }, [slug, toast]);
   
   if (loading) {
     return (

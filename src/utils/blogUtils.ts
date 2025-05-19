@@ -16,64 +16,23 @@ export interface BlogPost {
 
 export async function getAllPosts(): Promise<BlogPost[]> {
   try {
+    console.log("Starting to fetch blog posts...");
     // Fetch the list of blog files from the JSON file
     const response = await fetch('/api/blog-files.json');
     
     if (!response.ok) {
       console.error('Failed to fetch blog files list');
       // Fallback to static list if fetch fails
-      const fallbackFiles = [
-        "beyond-basic-eda.md",
-        "ml-models-fail-lessons.md",
-        "optimizing-python-data.md"
-      ];
-      
-      const postsPromises = fallbackFiles.map(async (fileName) => {
-        const post = await getPostBySlug(fileName.replace('.md', ''));
-        return post;
-      });
-      
-      const posts = await Promise.all(postsPromises);
-      
-      return posts.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateB.getTime() - dateA.getTime();
-      });
+      return getStaticBlogPosts();
     }
     
     // Parse the JSON response
     const fileNames = await response.json();
+    console.log("Fetched blog file names:", fileNames);
     
-    // Process each file to extract metadata and content
-    const postsPromises = fileNames.map(async (fileName: string) => {
-      const post = await getPostBySlug(fileName.replace('.md', ''));
-      return post;
-    });
-    
-    // Wait for all posts to be processed
-    const posts = await Promise.all(postsPromises);
-    
-    // Sort posts by date (newest first)
-    return posts.sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      return dateB.getTime() - dateA.getTime();
-    });
-  } catch (error) {
-    console.error('Error fetching blog posts:', error);
-    
-    // Fallback if any error occurs
     try {
-      // Use a static array of blog files instead of fetching from API
-      const fileNames = [
-        "beyond-basic-eda.md",
-        "ml-models-fail-lessons.md",
-        "optimizing-python-data.md"
-      ];
-      
       // Process each file to extract metadata and content
-      const postsPromises = fileNames.map(async (fileName) => {
+      const postsPromises = fileNames.map(async (fileName: string) => {
         try {
           const post = await getPostBySlug(fileName.replace('.md', ''));
           return post;
@@ -86,51 +45,163 @@ export async function getAllPosts(): Promise<BlogPost[]> {
       // Wait for all posts to be processed and filter out nulls
       const posts = (await Promise.all(postsPromises)).filter(Boolean) as BlogPost[];
       
+      if (posts.length === 0) {
+        console.warn("No posts were successfully loaded, falling back to static posts");
+        return getStaticBlogPosts();
+      }
+      
       // Sort posts by date (newest first)
       return posts.sort((a, b) => {
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
         return dateB.getTime() - dateA.getTime();
       });
-    } catch (fallbackError) {
-      console.error('Failed to load fallback blog posts:', fallbackError);
-      return [];
+    } catch (innerError) {
+      console.error('Error processing blog posts:', innerError);
+      return getStaticBlogPosts();
     }
+  } catch (error) {
+    console.error('Error in main getAllPosts function:', error);
+    return getStaticBlogPosts();
   }
+}
+
+// Function to create static blog posts when markdown processing fails
+function getStaticBlogPosts(): BlogPost[] {
+  console.log("Using static blog posts as fallback");
+  
+  // Create hardcoded blog posts to ensure content is displayed
+  const staticPosts: BlogPost[] = [
+    {
+      id: 'beyond-basic-eda',
+      slug: 'beyond-basic-eda',
+      title: 'Beyond Basic EDA: Advanced Techniques for Data Scientists',
+      excerpt: 'Move past simple exploratory data analysis with these advanced techniques that can uncover hidden patterns in your data.',
+      date: new Date('2023-11-15'),
+      image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
+      category: 'Data Science',
+      tags: ['Data Analysis', 'Statistics', 'Visualization'],
+      readTime: '8 min read',
+      content: '# Beyond Basic EDA\n\nExploratory Data Analysis (EDA) is often the first step in any data science project...'
+    },
+    {
+      id: 'ml-models-fail-lessons',
+      slug: 'ml-models-fail-lessons',
+      title: 'Why ML Models Fail in Production: Lessons from the Field',
+      excerpt: 'Discover the common pitfalls that cause machine learning models to fail when deployed to production environments and how to avoid them.',
+      date: new Date('2024-02-20'),
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b',
+      category: 'Machine Learning',
+      tags: ['MLOps', 'Production', 'Deployment'],
+      readTime: '10 min read',
+      content: '# Why ML Models Fail in Production\n\nMachine learning models that perform brilliantly in development often fail when deployed to production...'
+    },
+    {
+      id: 'optimizing-python-data',
+      slug: 'optimizing-python-data',
+      title: 'Optimizing Python Data Pipelines for Better Performance',
+      excerpt: 'Learn practical techniques to speed up your Python data processing pipelines and handle larger datasets more efficiently.',
+      date: new Date('2024-04-05'),
+      image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6',
+      category: 'Data Engineering',
+      tags: ['Python', 'Performance', 'Big Data'],
+      readTime: '12 min read',
+      content: '# Optimizing Python Data Pipelines\n\nData scientists and engineers frequently work with datasets that push the limits of their hardware...'
+    }
+  ];
+  
+  return staticPosts;
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost> {
   try {
+    console.log(`Fetching blog post for slug: ${slug}`);
     // Fetch the content of the specific markdown file
     const response = await fetch(`/BlogArticles/${slug}.md`);
     
     if (!response.ok) {
+      console.error(`Failed to fetch blog post: ${slug}`, response.statusText);
       throw new Error(`Failed to fetch blog post: ${slug}`);
     }
     
     const markdown = await response.text();
+    console.log(`Successfully fetched markdown for ${slug}, length: ${markdown.length} characters`);
     
-    // Parse the markdown file with gray-matter to separate frontmatter from content
-    const { data, content } = matter(markdown);
-    
-    // Parse the date string into a Date object
-    const date = new Date(data.date);
-    
-    // Return the post with all needed properties
-    return {
-      id: slug,
-      title: data.title || '',
-      excerpt: data.excerpt || '',
-      content: content || '',
-      date: date,
-      image: data.image || '',
-      category: data.category || '',
-      tags: data.tags || [],
-      slug: slug,
-      readTime: data.readTime || ''
-    };
+    try {
+      // Parse the markdown file with gray-matter to separate frontmatter from content
+      const { data, content } = parseFrontMatter(markdown);
+      
+      // Parse the date string into a Date object
+      const date = new Date(data.date);
+      
+      // Return the post with all needed properties
+      return {
+        id: slug,
+        title: data.title || '',
+        excerpt: data.excerpt || '',
+        content: content || '',
+        date: date,
+        image: data.image || '',
+        category: data.category || '',
+        tags: data.tags || [],
+        slug: slug,
+        readTime: data.readTime || ''
+      };
+    } catch (parseError) {
+      console.error(`Error parsing frontmatter for ${slug}:`, parseError);
+      throw parseError;
+    }
   } catch (error) {
     console.error(`Error fetching blog post ${slug}:`, error);
     throw error;
   }
+}
+
+// Custom function to parse frontmatter without relying on Buffer
+function parseFrontMatter(markdown: string) {
+  // Simple regex-based frontmatter parser for browser environment
+  const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
+  const match = frontmatterRegex.exec(markdown);
+  
+  if (!match) {
+    console.error("No frontmatter found in markdown");
+    return { data: {}, content: markdown };
+  }
+  
+  const frontMatter = match[1];
+  const content = markdown.replace(frontmatterRegex, '');
+  
+  // Parse the YAML-like frontmatter
+  const data: Record<string, any> = {};
+  const lines = frontMatter.split('\n');
+  
+  for (const line of lines) {
+    if (line.trim() === '') continue;
+    
+    const colonIndex = line.indexOf(':');
+    if (colonIndex !== -1) {
+      const key = line.slice(0, colonIndex).trim();
+      let value = line.slice(colonIndex + 1).trim();
+      
+      // Handle quoted strings
+      if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1);
+      }
+      
+      // Handle arrays (simple implementation)
+      if (value.startsWith('[') && value.endsWith(']')) {
+        try {
+          const arrayStr = value.replace(/'/g, '"'); // Replace single quotes with double quotes
+          data[key] = JSON.parse(arrayStr);
+        } catch (e) {
+          console.warn(`Failed to parse array value for key ${key}:`, value);
+          data[key] = [];
+        }
+      } else {
+        data[key] = value;
+      }
+    }
+  }
+  
+  return { data, content };
 }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { useToast } from "@/hooks/use-toast";
 
 const BlogSection = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -15,25 +16,39 @@ const BlogSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 3;
+  const { toast } = useToast();
   
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         console.log("Fetching blog posts...");
+        setLoading(true);
+        setError(null);
+        
         const allPosts = await getAllPosts();
         console.log("Fetched blog posts:", allPosts);
-        setPosts(allPosts);
-        setError(null);
+        
+        if (allPosts.length === 0) {
+          setError("No blog posts found. Please check your content files.");
+        } else {
+          setPosts(allPosts);
+          setError(null);
+        }
       } catch (err) {
         console.error("Failed to fetch blog posts:", err);
         setError("Failed to load blog posts. Please try again later.");
+        toast({
+          title: "Error loading blog posts",
+          description: "There was a problem loading the blog content.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
     
     fetchPosts();
-  }, []);
+  }, [toast]);
   
   // Calculate total pages
   const totalPages = Math.ceil(posts.length / postsPerPage);
@@ -45,6 +60,28 @@ const BlogSection = () => {
   
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+  
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    getAllPosts()
+      .then((fetchedPosts) => {
+        setPosts(fetchedPosts);
+        if (fetchedPosts.length === 0) {
+          setError("No blog posts found. Please check your content files.");
+        }
+      })
+      .catch((e) => {
+        console.error("Error during retry:", e);
+        setError(e.message || "Failed to load blog posts after retry.");
+        toast({
+          title: "Error loading blog posts",
+          description: "There was a problem loading the blog content after retrying.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => setLoading(false));
   };
   
   return (
@@ -69,7 +106,7 @@ const BlogSection = () => {
             <div className="text-center">
               <p className="text-red-500">{error}</p>
               <Button 
-                onClick={() => {setLoading(true); setError(null); getAllPosts().then(setPosts).finally(() => setLoading(false)).catch(e => setError(e.message))}} 
+                onClick={handleRetry} 
                 className="mt-4"
               >
                 Try Again
