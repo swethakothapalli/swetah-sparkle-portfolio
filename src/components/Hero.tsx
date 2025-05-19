@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Hero = () => {
@@ -46,6 +46,12 @@ const Hero = () => {
             <Button asChild variant="outline" size="lg" className="font-medium">
               <Link to="/contact">
                 Get In Touch
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="lg" className="font-medium">
+              <Link to="/resume">
+                <Download className="mr-2 h-4 w-4" />
+                Resume
               </Link>
             </Button>
           </div>

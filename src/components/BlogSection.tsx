@@ -3,21 +3,23 @@ import { useState, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDistanceToNow } from "date-fns";
 import { getAllPosts, BlogPost } from "@/utils/blogUtils";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 const BlogSection = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 3;
   
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         const allPosts = await getAllPosts();
-        // Get exactly 3 posts for the homepage section
-        setPosts(allPosts.slice(0, 3));
+        setPosts(allPosts);
       } catch (error) {
         console.error("Failed to fetch blog posts:", error);
       } finally {
@@ -27,6 +29,18 @@ const BlogSection = () => {
     
     fetchPosts();
   }, []);
+  
+  // Calculate total pages
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+  
+  // Get current posts
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
   
   return (
     <section className="section bg-secondary/20 dark:bg-secondary/10">
@@ -48,7 +62,7 @@ const BlogSection = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {posts.map((post) => (
+              {currentPosts.map((post) => (
                 <Card key={post.id} className="overflow-hidden border border-border h-full flex flex-col animate-fade-in">
                   <div className="h-48 overflow-hidden">
                     <img 
@@ -91,6 +105,39 @@ const BlogSection = () => {
                 </Card>
               ))}
             </div>
+            
+            {totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }).map((_, index) => (
+                      <PaginationItem key={index}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(index + 1)}
+                          isActive={currentPage === index + 1}
+                        >
+                          {index + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
             
             <div className="text-center mt-12">
               <Button asChild variant="default">
