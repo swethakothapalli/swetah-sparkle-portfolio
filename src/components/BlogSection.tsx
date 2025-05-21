@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { getAllPosts, BlogPost } from "@/utils/blogUtils";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow, isValid } from "date-fns";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
+import BlogCard from "./blog/BlogCard";
+import BlogPagination from "./blog/BlogPagination";
+import BlogLoading from "./blog/BlogLoading";
+import BlogError from "./blog/BlogError";
 
 const BlogSection = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -18,36 +19,36 @@ const BlogSection = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        console.log("Fetching blog posts...");
-        setLoading(true);
-        setError(null);
-        
-        const allPosts = await getAllPosts();
-        console.log("Fetched blog posts:", allPosts);
-        
-        if (allPosts.length === 0) {
-          setError("No blog posts found. Please check your content files.");
-        } else {
-          setPosts(allPosts);
-          setError(null);
-        }
-      } catch (err) {
-        console.error("Failed to fetch blog posts:", err);
-        setError("Failed to load blog posts. Please try again later.");
-        toast({
-          title: "Error loading blog posts",
-          description: "There was a problem loading the blog content.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchPosts();
-  }, [toast]);
+  }, []);
+  
+  const fetchPosts = async () => {
+    try {
+      console.log("Fetching blog posts...");
+      setLoading(true);
+      setError(null);
+      
+      const allPosts = await getAllPosts();
+      console.log("Fetched blog posts:", allPosts);
+      
+      if (allPosts.length === 0) {
+        setError("No blog posts found. Please check your content files.");
+      } else {
+        setPosts(allPosts);
+        setError(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch blog posts:", err);
+      setError("Failed to load blog posts. Please try again later.");
+      toast({
+        title: "Error loading blog posts",
+        description: "There was a problem loading the blog content.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Calculate total pages
   const totalPages = Math.ceil(posts.length / postsPerPage);
@@ -59,42 +60,6 @@ const BlogSection = () => {
   
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-  };
-  
-  const handleRetry = () => {
-    setLoading(true);
-    setError(null);
-    getAllPosts()
-      .then((fetchedPosts) => {
-        setPosts(fetchedPosts);
-        if (fetchedPosts.length === 0) {
-          setError("No blog posts found. Please check your content files.");
-        }
-      })
-      .catch((e) => {
-        console.error("Error during retry:", e);
-        setError(e.message || "Failed to load blog posts after retry.");
-        toast({
-          title: "Error loading blog posts",
-          description: "There was a problem loading the blog content after retrying.",
-          variant: "destructive",
-        });
-      })
-      .finally(() => setLoading(false));
-  };
-  
-  // Function to safely format dates
-  const getFormattedDate = (dateValue: Date) => {
-    try {
-      const dateObj = new Date(dateValue);
-      if (isValid(dateObj)) {
-        return formatDistanceToNow(dateObj, { addSuffix: true });
-      }
-      return "Date unavailable";
-    } catch (err) {
-      console.error("Error formatting date:", err, dateValue);
-      return "Date unavailable";
-    }
   };
   
   return (
@@ -109,23 +74,9 @@ const BlogSection = () => {
         </div>
         
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="text-center">
-              <p>Loading blog posts...</p>
-            </div>
-          </div>
+          <BlogLoading />
         ) : error ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="text-center">
-              <p className="text-red-500">{error}</p>
-              <Button 
-                onClick={handleRetry} 
-                className="mt-4"
-              >
-                Try Again
-              </Button>
-            </div>
-          </div>
+          <BlogError error={error} onRetry={fetchPosts} />
         ) : posts.length === 0 ? (
           <div className="flex justify-center items-center py-20">
             <div className="text-center">
@@ -136,81 +87,17 @@ const BlogSection = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {currentPosts.map((post) => (
-                <Card key={post.id} className="overflow-hidden border border-border h-full flex flex-col animate-fade-in">
-                  <div className="h-48 overflow-hidden">
-                    <img 
-                      src={post.image} 
-                      alt={post.title}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                  </div>
-                  
-                  <CardHeader className="pt-5 pb-0">
-                    <div className="flex justify-between items-center mb-2">
-                      <Badge variant="secondary">
-                        {post.category}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {getFormattedDate(post.date)}
-                      </span>
-                    </div>
-                    <CardTitle className="line-clamp-2 hover:text-primary transition-colors">
-                      <Link to={`/blog/${post.slug}`}>
-                        {post.title}
-                      </Link>
-                    </CardTitle>
-                  </CardHeader>
-                  
-                  <CardContent className="flex-grow py-4">
-                    <CardDescription className="line-clamp-3">
-                      {post.excerpt}
-                    </CardDescription>
-                  </CardContent>
-                  
-                  <CardFooter className="pt-0">
-                    <Button asChild variant="ghost" className="p-0 h-auto font-medium group">
-                      <Link to={`/blog/${post.slug}`}>
-                        Read More
-                        <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <div key={post.id} className="animate-fade-in">
+                  <BlogCard post={post} />
+                </div>
               ))}
             </div>
             
-            {totalPages > 1 && (
-              <div className="mt-8">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
-                    </PaginationItem>
-                    
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                      <PaginationItem key={index}>
-                        <PaginationLink
-                          onClick={() => handlePageChange(index + 1)}
-                          isActive={currentPage === index + 1}
-                        >
-                          {index + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
+            <BlogPagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
             
             <div className="text-center mt-12">
               <Button asChild variant="default">

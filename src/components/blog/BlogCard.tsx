@@ -6,7 +6,7 @@ import { formatDistanceToNow, isValid } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BlogPost } from "@/utils/blogUtils";
+import { BlogPost } from "@/utils/blogTypes";
 
 interface BlogCardProps {
   post: BlogPost;
@@ -34,6 +34,10 @@ const BlogCard = ({ post }: BlogCardProps) => {
           src={post.image} 
           alt={post.title}
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+          onError={(e) => {
+            console.error(`Failed to load image for post: ${post.title}`);
+            e.currentTarget.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d";
+          }}
         />
       </div>
       

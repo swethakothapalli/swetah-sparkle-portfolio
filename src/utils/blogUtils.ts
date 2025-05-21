@@ -1,17 +1,10 @@
-import matter from 'gray-matter';
 
-export interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  date: Date;
-  image: string;
-  category: string;
-  tags: string[];
-  slug: string;
-  readTime: string;
-}
+import { BlogPost } from "./blogTypes";
+import { ensureValidDate } from "./dateUtils";
+import { parseFrontMatter } from "./markdownUtils";
+import { getStaticBlogPosts } from "./blogStaticData";
+
+export { BlogPost } from "./blogTypes";
 
 export async function getAllPosts(): Promise<BlogPost[]> {
   try {
@@ -64,75 +57,6 @@ export async function getAllPosts(): Promise<BlogPost[]> {
     console.error('Error in main getAllPosts function:', error);
     return getStaticBlogPosts();
   }
-}
-
-// Helper function to ensure we have a valid date object
-function ensureValidDate(date: any): Date {
-  try {
-    const dateObj = new Date(date);
-    // Check if the date is valid
-    if (isNaN(dateObj.getTime())) {
-      console.warn("Invalid date encountered, using current date instead:", date);
-      return new Date(); // Return current date as fallback
-    }
-    return dateObj;
-  } catch (e) {
-    console.error("Error parsing date:", e);
-    return new Date(); // Return current date as fallback
-  }
-}
-
-// Function to create static blog posts when markdown processing fails
-function getStaticBlogPosts(): BlogPost[] {
-  console.log("Using static blog posts as fallback");
-  
-  const currentDate = new Date();
-  const yesterday = new Date(currentDate);
-  yesterday.setDate(currentDate.getDate() - 1);
-  const lastWeek = new Date(currentDate);
-  lastWeek.setDate(currentDate.getDate() - 7);
-  
-  // Create hardcoded blog posts to ensure content is displayed
-  const staticPosts: BlogPost[] = [
-    {
-      id: 'beyond-basic-eda',
-      slug: 'beyond-basic-eda',
-      title: 'Beyond Basic EDA: Advanced Techniques for Data Scientists',
-      excerpt: 'Move past simple exploratory data analysis with these advanced techniques that can uncover hidden patterns in your data.',
-      date: currentDate,
-      image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
-      category: 'Data Science',
-      tags: ['Data Analysis', 'Statistics', 'Visualization'],
-      readTime: '8 min read',
-      content: '# Beyond Basic EDA\n\nExploratory Data Analysis (EDA) is often the first step in any data science project...'
-    },
-    {
-      id: 'ml-models-fail-lessons',
-      slug: 'ml-models-fail-lessons',
-      title: 'Why ML Models Fail in Production: Lessons from the Field',
-      excerpt: 'Discover the common pitfalls that cause machine learning models to fail when deployed to production environments and how to avoid them.',
-      date: yesterday,
-      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b',
-      category: 'Machine Learning',
-      tags: ['MLOps', 'Production', 'Deployment'],
-      readTime: '10 min read',
-      content: '# Why ML Models Fail in Production\n\nMachine learning models that perform brilliantly in development often fail when deployed to production...'
-    },
-    {
-      id: 'optimizing-python-data',
-      slug: 'optimizing-python-data',
-      title: 'Optimizing Python Data Pipelines for Better Performance',
-      excerpt: 'Learn practical techniques to speed up your Python data processing pipelines and handle larger datasets more efficiently.',
-      date: lastWeek,
-      image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6',
-      category: 'Data Engineering',
-      tags: ['Python', 'Performance', 'Big Data'],
-      readTime: '12 min read',
-      content: '# Optimizing Python Data Pipelines\n\nData scientists and engineers frequently work with datasets that push the limits of their hardware...'
-    }
-  ];
-  
-  return staticPosts;
 }
 
 export async function getPostBySlug(slug: string): Promise<BlogPost> {
@@ -193,71 +117,4 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
     console.error(`Error fetching blog post ${slug}:`, error);
     throw error;
   }
-}
-
-// Enhanced frontmatter parser for browser environment
-function parseFrontMatter(markdown: string) {
-  // Multiple regex patterns to handle different frontmatter formats
-  const patterns = [
-    /^---\r?\n([\s\S]*?)\r?\n---\r?\n/,     // Standard YAML format
-    /^---\r?\n([\s\S]*?)\r?\n---/,          // Alternative YAML format
-    /^\+\+\+\r?\n([\s\S]*?)\r?\n\+\+\+\r?\n/, // TOML format
-    /^\{\{[\s\S]*?\}\}\r?\n/                // JSON format
-  ];
-  
-  let match = null;
-  
-  // Try each pattern until we find a match
-  for (const pattern of patterns) {
-    match = pattern.exec(markdown);
-    if (match) break;
-  }
-  
-  if (!match) {
-    console.warn("No frontmatter found in markdown, creating default metadata");
-    return { 
-      data: {}, 
-      content: markdown 
-    };
-  }
-  
-  const frontMatter = match[1];
-  // Extract content by removing the frontmatter section completely
-  const content = markdown.replace(match[0], '').trim();
-  
-  // Parse the YAML-like frontmatter
-  const data: Record<string, any> = {};
-  const lines = frontMatter.split('\n');
-  
-  for (const line of lines) {
-    if (line.trim() === '' || line.trim().startsWith('#')) continue;
-    
-    const colonIndex = line.indexOf(':');
-    if (colonIndex !== -1) {
-      const key = line.slice(0, colonIndex).trim();
-      let value = line.slice(colonIndex + 1).trim();
-      
-      // Handle quoted strings
-      if (value.startsWith('"') && value.endsWith('"')) {
-        value = value.slice(1, -1);
-      } else if (value.startsWith("'") && value.endsWith("'")) {
-        value = value.slice(1, -1);
-      }
-      
-      // Handle arrays (simple implementation)
-      if (value.startsWith('[') && value.endsWith(']')) {
-        try {
-          const arrayStr = value.replace(/'/g, '"'); // Replace single quotes with double quotes
-          data[key] = JSON.parse(arrayStr);
-        } catch (e) {
-          console.warn(`Failed to parse array value for key ${key}:`, value);
-          data[key] = [];
-        }
-      } else {
-        data[key] = value;
-      }
-    }
-  }
-  
-  return { data, content };
 }

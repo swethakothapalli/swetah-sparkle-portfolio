@@ -30,14 +30,20 @@ const ProjectCard = ({ project, className }: ProjectCardProps) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative overflow-hidden h-48">
-        <img 
-          src={project.image} 
-          alt={project.title}
-          className={cn(
-            "w-full h-full object-cover transition-transform duration-500",
-            isHovered ? "scale-105" : ""
-          )}
-        />
+        {project.image && (
+          <img 
+            src={project.image} 
+            alt={project.title}
+            className={cn(
+              "w-full h-full object-cover transition-transform duration-500",
+              isHovered ? "scale-105" : ""
+            )}
+            onError={(e) => {
+              console.error(`Failed to load image for project: ${project.title}`);
+              e.currentTarget.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d";
+            }}
+          />
+        )}
       </div>
       
       <CardHeader>
