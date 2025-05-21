@@ -15,9 +15,10 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, className }: ProjectCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
-  // Extract the project ID from the link
-  const projectId = project.link.split('/').pop() || '';
+  // Use the project ID directly instead of trying to extract from link
+  const projectId = project.id;
   
   return (
     <Card 
@@ -30,20 +31,18 @@ const ProjectCard = ({ project, className }: ProjectCardProps) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative overflow-hidden h-48">
-        {project.image && (
-          <img 
-            src={project.image} 
-            alt={project.title}
-            className={cn(
-              "w-full h-full object-cover transition-transform duration-500",
-              isHovered ? "scale-105" : ""
-            )}
-            onError={(e) => {
-              console.error(`Failed to load image for project: ${project.title}`);
-              e.currentTarget.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d";
-            }}
-          />
-        )}
+        <img 
+          src={imageError ? "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d" : project.image} 
+          alt={project.title}
+          className={cn(
+            "w-full h-full object-cover transition-transform duration-500",
+            isHovered ? "scale-105" : ""
+          )}
+          onError={(e) => {
+            console.error(`Failed to load image for project: ${project.title}`);
+            setImageError(true);
+          }}
+        />
       </div>
       
       <CardHeader>

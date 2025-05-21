@@ -5,74 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
-import { Project } from "@/utils/projectUtils";
-
-const projects: Project[] = [
-  {
-    id: "1",
-    title: "Customer Segmentation Analysis",
-    description: "Applied unsupervised learning techniques to segment customers based on purchasing behavior, increasing targeted campaign efficiency by 30%.",
-    tags: ["Python", "Scikit-learn", "Clustering", "Data Visualization"],
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/customer-segmentation"
-  },
-  {
-    id: "2",
-    title: "Predictive Sales Forecasting",
-    description: "Built a time series forecasting model to predict monthly sales trends with 92% accuracy, enabling better inventory management.",
-    tags: ["Time Series", "Prophet", "Feature Engineering"],
-    image: "https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/sales-forecasting"
-  },
-  {
-    id: "3",
-    title: "NLP for Customer Support",
-    description: "Developed a sentiment analysis tool to automatically categorize customer feedback, reducing response time by 40%.",
-    tags: ["NLP", "BERT", "Python", "TensorFlow"],
-    image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/nlp-customer-support"
-  },
-  {
-    id: "4",
-    title: "Real-time Anomaly Detection",
-    description: "Created a system to detect anomalies in IoT sensor data streams in real-time, preventing equipment failures.",
-    tags: ["Anomaly Detection", "Streaming Data", "Kafka"],
-    image: "https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/anomaly-detection"
-  },
-  {
-    id: "5",
-    title: "Recommender System for E-commerce",
-    description: "Built a collaborative filtering-based recommendation engine that improved click-through rates by 22% and increased average order value.",
-    tags: ["Recommender Systems", "Collaborative Filtering", "Python", "AWS"],
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/recommender-system"
-  },
-  {
-    id: "6",
-    title: "Computer Vision for Quality Control",
-    description: "Developed a CV system to detect manufacturing defects with 98% accuracy, reducing manual inspection time by 75%.",
-    tags: ["Computer Vision", "OpenCV", "CNNs", "PyTorch"],
-    image: "https://images.unsplash.com/photo-1580894908361-967195033215?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/computer-vision-qc"
-  },
-  {
-    id: "7",
-    title: "Fraud Detection System",
-    description: "Implemented an ensemble learning approach for detecting fraudulent transactions with high precision and recall rates.",
-    tags: ["Machine Learning", "Ensemble Methods", "Fraud Detection"],
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/fraud-detection"
-  },
-  {
-    id: "8",
-    title: "Churn Prediction Model",
-    description: "Created a predictive model to identify customers at risk of churning, allowing for proactive retention strategies.",
-    tags: ["Predictive Modeling", "XGBoost", "Feature Engineering"],
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    link: "/projects/churn-prediction"
-  },
-];
+import { Project, getProjectBySlug } from "@/utils/projectUtils";
 
 // Extended project details with more content
 const extendedProjects = {
@@ -207,18 +140,39 @@ const extendedProjects = {
 };
 
 const ProjectDetail = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { slug } = useParams<{ slug: string }>();
+  const [project, setProject] = useState<Project | null>(null);
   const [projectDetails, setProjectDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    if (projectId && extendedProjects[projectId as keyof typeof extendedProjects]) {
-      setProjectDetails(extendedProjects[projectId as keyof typeof extendedProjects]);
-      setLoading(false);
-    } else {
-      setLoading(false);
-    }
-  }, [projectId]);
+    const fetchProjectData = async () => {
+      if (!slug) {
+        setError("No project ID provided");
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // Fetch the project data
+        const projectData = await getProjectBySlug(slug);
+        setProject(projectData);
+        
+        // Get extended project details if available
+        if (extendedProjects[slug as keyof typeof extendedProjects]) {
+          setProjectDetails(extendedProjects[slug as keyof typeof extendedProjects]);
+        }
+      } catch (err) {
+        console.error("Error loading project:", err);
+        setError("Failed to load project details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProjectData();
+  }, [slug]);
   
   if (loading) {
     return (
@@ -232,7 +186,7 @@ const ProjectDetail = () => {
     );
   }
   
-  if (!projectDetails) {
+  if (error || !project) {
     return (
       <>
         <Navbar />
@@ -240,7 +194,7 @@ const ProjectDetail = () => {
           <div className="text-center max-w-md">
             <h1 className="heading-xl mb-4">Project Not Found</h1>
             <p className="text-xl text-muted-foreground mb-6">
-              The project you're looking for doesn't exist or has been moved.
+              {error || "The project you're looking for doesn't exist or has been moved."}
             </p>
             <div className="space-x-4">
               <Button asChild>
@@ -257,9 +211,6 @@ const ProjectDetail = () => {
     );
   }
   
-  // Find the original project to get the image
-  const originalProject = projects.find(p => p.link.includes(projectId || ''));
-  
   return (
     <>
       <Navbar />
@@ -268,14 +219,16 @@ const ProjectDetail = () => {
         <section className="pt-32 pb-16 md:pb-24 bg-secondary/20 dark:bg-secondary/10">
           <div className="container-content">
             <div className="max-w-4xl mx-auto">
-              <h1 className="heading-xl mb-4">{projectDetails.fullTitle}</h1>
+              <h1 className="heading-xl mb-4">
+                {projectDetails?.fullTitle || project.title}
+              </h1>
               <p className="text-xl text-muted-foreground">
-                {projectDetails.summary}
+                {projectDetails?.summary || project.description}
               </p>
               <div className="flex flex-wrap gap-2 mt-6">
-                {projectDetails.tools.map((tool: string) => (
-                  <Badge key={tool} variant="secondary" className="font-normal">
-                    {tool}
+                {(projectDetails?.tools || project.tags).map((item: string) => (
+                  <Badge key={item} variant="secondary" className="font-normal">
+                    {item}
                   </Badge>
                 ))}
               </div>
@@ -288,9 +241,13 @@ const ProjectDetail = () => {
           <div className="container-content">
             <div className="max-w-4xl mx-auto overflow-hidden rounded-lg shadow-md">
               <img 
-                src={originalProject?.image || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"} 
-                alt={projectDetails.fullTitle}
+                src={project.image || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80"} 
+                alt={project.title}
                 className="w-full h-auto object-cover"
+                onError={(e) => {
+                  console.error(`Failed to load image for project: ${project.title}`);
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d";
+                }}
               />
             </div>
           </div>
@@ -300,34 +257,48 @@ const ProjectDetail = () => {
         <section className="section pb-24">
           <div className="container-content">
             <div className="max-w-4xl mx-auto grid gap-12">
-              <div>
-                <h2 className="heading-md mb-4">The Challenge</h2>
-                <p className="text-muted-foreground">{projectDetails.challenge}</p>
-              </div>
-              
-              <div>
-                <h2 className="heading-md mb-4">My Approach</h2>
-                <p className="text-muted-foreground">{projectDetails.approach}</p>
-              </div>
-              
-              <div>
-                <h2 className="heading-md mb-4">Methodology</h2>
-                <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                  {projectDetails.methodology.map((step: string, index: number) => (
-                    <li key={index}>{step}</li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div>
-                <h2 className="heading-md mb-4">Results & Impact</h2>
-                <p className="text-muted-foreground">{projectDetails.results}</p>
-              </div>
-              
-              <div>
-                <h2 className="heading-md mb-4">Implementation</h2>
-                <p className="text-muted-foreground">{projectDetails.implementation}</p>
-              </div>
+              {projectDetails ? (
+                <>
+                  <div>
+                    <h2 className="heading-md mb-4">The Challenge</h2>
+                    <p className="text-muted-foreground">{projectDetails.challenge}</p>
+                  </div>
+                  
+                  <div>
+                    <h2 className="heading-md mb-4">My Approach</h2>
+                    <p className="text-muted-foreground">{projectDetails.approach}</p>
+                  </div>
+                  
+                  <div>
+                    <h2 className="heading-md mb-4">Methodology</h2>
+                    <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                      {projectDetails.methodology.map((step: string, index: number) => (
+                        <li key={index}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h2 className="heading-md mb-4">Results & Impact</h2>
+                    <p className="text-muted-foreground">{projectDetails.results}</p>
+                  </div>
+                  
+                  <div>
+                    <h2 className="heading-md mb-4">Implementation</h2>
+                    <p className="text-muted-foreground">{projectDetails.implementation}</p>
+                  </div>
+                </>
+              ) : project.content ? (
+                <div className="prose dark:prose-invert max-w-none">
+                  {/* Render project markdown content if available */}
+                  <div dangerouslySetInnerHTML={{ __html: project.content }} />
+                </div>
+              ) : (
+                <div>
+                  <h2 className="heading-md mb-4">Project Overview</h2>
+                  <p className="text-muted-foreground">{project.description}</p>
+                </div>
+              )}
               
               <div className="text-center pt-8">
                 <Button asChild size="lg">

@@ -17,21 +17,21 @@ export async function getAllProjects(): Promise<Project[]> {
   try {
     // Use a static array of project files
     const fileNames = [
-      "customer-segmentation.md",
-      "sales-forecasting.md", 
-      "nlp-customer-support.md",
-      "anomaly-detection.md"
+      "customer-segmentation",
+      "sales-forecasting", 
+      "nlp-customer-support",
+      "anomaly-detection"
     ];
     
     // Process each file to extract metadata and content
-    const projectsPromises = fileNames.map(async (fileName) => {
+    const projectsPromises = fileNames.map(async (fileName, index) => {
       try {
-        const project = await getProjectBySlug(fileName.replace('.md', ''));
+        const project = await getProjectBySlug(fileName);
         return project;
       } catch (error) {
         console.error(`Error processing ${fileName}:`, error);
-        // Return a basic fallback project
-        return createFallbackProject(fileName.replace('.md', ''));
+        // Return a basic fallback project with proper ID formatting
+        return createFallbackProject(fileName, (index + 1).toString());
       }
     });
     
@@ -48,14 +48,14 @@ export async function getAllProjects(): Promise<Project[]> {
 }
 
 // Function to create a fallback project when loading fails
-function createFallbackProject(slug: string): Project {
+function createFallbackProject(slug: string, id: string): Project {
   const title = slug
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
     
   return {
-    id: slug,
+    id: slug, // Use the slug as ID for consistent navigation
     title: title,
     description: "Project details currently unavailable.",
     tags: ["Project"],
@@ -68,7 +68,7 @@ function createFallbackProject(slug: string): Project {
 function getFallbackProjects(): Project[] {
   return [
     {
-      id: "1",
+      id: "customer-segmentation", // Using slug as ID for consistent navigation
       title: "Customer Segmentation Analysis",
       description: "Applied unsupervised learning techniques to segment customers based on purchasing behavior, increasing targeted campaign efficiency by 30%.",
       tags: ["Python", "Scikit-learn", "Clustering", "Data Visualization"],
@@ -76,7 +76,7 @@ function getFallbackProjects(): Project[] {
       link: "/projects/customer-segmentation"
     },
     {
-      id: "2",
+      id: "sales-forecasting", // Using slug as ID for consistent navigation
       title: "Predictive Sales Forecasting",
       description: "Built a time series forecasting model to predict monthly sales trends with 92% accuracy, enabling better inventory management.",
       tags: ["Time Series", "Prophet", "Feature Engineering"],
@@ -84,7 +84,7 @@ function getFallbackProjects(): Project[] {
       link: "/projects/sales-forecasting"
     },
     {
-      id: "3",
+      id: "nlp-customer-support", // Using slug as ID for consistent navigation
       title: "NLP for Customer Support",
       description: "Developed a sentiment analysis tool to automatically categorize customer feedback, reducing response time by 40%.",
       tags: ["NLP", "BERT", "Python", "TensorFlow"],
@@ -92,7 +92,7 @@ function getFallbackProjects(): Project[] {
       link: "/projects/nlp-customer-support"
     },
     {
-      id: "4",
+      id: "anomaly-detection", // Using slug as ID for consistent navigation
       title: "Real-time Anomaly Detection",
       description: "Created a system to detect anomalies in IoT sensor data streams in real-time, preventing equipment failures.",
       tags: ["Anomaly Detection", "Streaming Data", "Kafka"],
@@ -118,11 +118,11 @@ export async function getProjectBySlug(slug: string): Promise<Project> {
     
     // Return the project with all needed properties
     return {
-      id: slug,
+      id: slug, // Using slug as ID for consistent navigation
       title: data.title || slug,
       description: data.description || '',
       tags: data.tags || [],
-      image: data.image || '',
+      image: data.image || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
       link: `/projects/${slug}`,
       content: content || '',
       date: data.date ? new Date(data.date) : undefined
