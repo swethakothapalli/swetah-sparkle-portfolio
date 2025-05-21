@@ -4,7 +4,8 @@ import { ensureValidDate } from "./dateUtils";
 import { parseFrontMatter } from "./markdownUtils";
 import { getStaticBlogPosts } from "./blogStaticData";
 
-export { BlogPost } from "./blogTypes";
+// Use export type for re-exporting types when isolatedModules is enabled
+export type { BlogPost } from "./blogTypes";
 
 export async function getAllPosts(): Promise<BlogPost[]> {
   try {
