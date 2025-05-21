@@ -157,12 +157,15 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
       const parsedDate = data.date ? new Date(data.date) : new Date();
       const date = ensureValidDate(parsedDate);
       
+      // Process the content to remove any remaining frontmatter markers
+      const cleanContent = content.trim();
+      
       // Return the post with all needed properties
       return {
         id: slug,
         title: data.title || slug,
         excerpt: data.excerpt || '',
-        content: content || markdown, // Fallback to entire markdown if no frontmatter
+        content: cleanContent, // Use the cleaned content
         date: date,
         image: data.image || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
         category: data.category || 'Uncategorized',
@@ -177,7 +180,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost> {
         id: slug,
         title: slug,
         excerpt: 'Content preview unavailable',
-        content: markdown, // Use the raw markdown content
+        content: markdown.replace(/^---[\s\S]*?---/, '').trim(), // Remove frontmatter from raw markdown
         date: new Date(),
         image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
         category: 'Uncategorized',
@@ -219,7 +222,8 @@ function parseFrontMatter(markdown: string) {
   }
   
   const frontMatter = match[1];
-  const content = markdown.replace(match[0], '');
+  // Extract content by removing the frontmatter section completely
+  const content = markdown.replace(match[0], '').trim();
   
   // Parse the YAML-like frontmatter
   const data: Record<string, any> = {};

@@ -28,7 +28,7 @@ const BlogCard = ({ post }: BlogCardProps) => {
   };
 
   return (
-    <Card key={post.id} className="overflow-hidden border border-border h-full flex flex-col">
+    <Card className="overflow-hidden border border-border h-full flex flex-col transition-all duration-300 hover:shadow-lg">
       <div className="h-48 overflow-hidden">
         <img 
           src={post.image} 
@@ -39,7 +39,7 @@ const BlogCard = ({ post }: BlogCardProps) => {
       
       <CardHeader>
         <div className="flex justify-between items-center mb-2">
-          <Badge variant="secondary">
+          <Badge variant="secondary" className="font-medium">
             {post.category}
           </Badge>
           <span className="text-xs text-muted-foreground">
@@ -53,7 +53,7 @@ const BlogCard = ({ post }: BlogCardProps) => {
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="py-0">
+      <CardContent className="py-0 flex-grow">
         <CardDescription className="line-clamp-3 mb-4">
           {post.excerpt}
         </CardDescription>

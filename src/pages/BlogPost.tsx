@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar } from "lucide-react";
@@ -101,6 +100,9 @@ const BlogPostPage = () => {
     );
   }
   
+  // Clean up the markdown content if needed
+  const cleanContent = post?.content ? post.content.replace(/^---[\s\S]*?---/, '') : '';
+  
   return (
     <>
       <Navbar />
@@ -153,7 +155,7 @@ const BlogPostPage = () => {
             
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <ReactMarkdown>
-                {post.content}
+                {cleanContent}
               </ReactMarkdown>
             </div>
           </div>
